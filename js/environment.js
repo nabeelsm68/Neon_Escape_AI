@@ -214,5 +214,11 @@ const Environment = {
             }
         }
         ctx.restore();
+        
+        // --- Add Scanlines Overlay ---
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        for (let y = 0; y < screenHeight; y += 4) {
+            ctx.fillRect(0, y, screenWidth, 2);
+        }
     }
 };

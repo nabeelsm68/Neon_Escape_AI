@@ -34,7 +34,10 @@ const Game = {
         survivalTime: 0,
         combo: 1,
         maxCombo: 1,
-        comboTimer: 0
+        comboTimer: 0,
+        gesturesRecognized: 0,
+        enemiesDefeated: 0,
+        aiActionsTriggered: 0
     },
 
     // Wave Config
@@ -82,7 +85,10 @@ const Game = {
             survivalTime: 0,
             combo: 1,
             maxCombo: 1,
-            comboTimer: 0
+            comboTimer: 0,
+            gesturesRecognized: 0,
+            enemiesDefeated: 0,
+            aiActionsTriggered: 0
         };
         
         this.startWave(1);
@@ -160,23 +166,27 @@ const Game = {
             this.objective = "ELIMINATE 8 HOSTILES";
             this.objectiveTarget = 8;
             this.objectiveProgress = 0;
-            UI.showAnnouncement("SYSTEM BOOT: ELIMINATE HOSTILES");
+            UI.showAnnouncement("LEVEL 1 - AI VISION<br>ELIMINATE HOSTILES");
+            if(UI.showNovaMessage) UI.showNovaMessage("CALIBRATION COMPLETE. COMMENCING COMBAT PROTOCOL.", 4000);
         } else if (waveNum === 2) {
             this.objective = "SURVIVE THE HUNTER ASSAULT";
             this.objectiveTarget = 15;
             this.objectiveProgress = 0;
-            UI.showAnnouncement("WARNING: HOSTILE HUNTERS DETECTED");
+            UI.showAnnouncement("LEVEL 2 - AI COMBAT<br>WARNING: HUNTERS DETECTED");
+            if(UI.showNovaMessage) UI.showNovaMessage("MULTIPLE HOSTILES DETECTED. RECOMMEND EVASIVE ACTION.", 4000);
         } else if (waveNum === 3) {
             this.objective = "DESTROY 3 ARMORED UNITS";
             this.objectiveTarget = 3;
             this.objectiveProgress = 0;
-            UI.showAnnouncement("ARMORED UNITS DEPLOYED");
+            UI.showAnnouncement("LEVEL 3 - AI ADAPTATION<br>ARMORED UNITS DEPLOYED");
+            if(UI.showNovaMessage) UI.showNovaMessage("ENEMIES ARE ADAPTING TO YOUR MOVEMENT. USE GESTURES CAREFULLY.", 4000);
         } else if (waveNum === 4) {
             this.objective = "SECURE THE CORE";
             this.objectiveTarget = 3;
             this.objectiveProgress = 0;
             if (typeof Environment.spawnCoreNodes === 'function') Environment.spawnCoreNodes();
-            UI.showAnnouncement("CORE FAILURE IMMINENT");
+            UI.showAnnouncement("LEVEL 4 - AI CORE<br>CORE FAILURE IMMINENT");
+            if(UI.showNovaMessage) UI.showNovaMessage("SECURE THE CORES BEFORE THE SYSTEM COLLAPSES.", 4000);
         } else if (waveNum === 5) {
             this.isWaveActive = false;
             this.objective = "DESTROY THE VOID SENTINEL";
@@ -184,7 +194,7 @@ const Game = {
             this.objectiveProgress = 0;
             
             this.cinematicPauseTimer = 1.0; // Freeze gameplay temporarily
-            UI.showAnnouncement("WARNING<br>VOID SENTINEL DETECTED", 3000);
+            UI.showAnnouncement("FINAL LEVEL<br>VOID SENTINEL DETECTED", 3000);
             
             setTimeout(() => {
                 UI.showAnnouncement("FINAL THREAT<br>VOID SENTINEL", 3000);
@@ -273,6 +283,7 @@ const Game = {
 
     enemyDied(enemy) {
         this.addScore(enemy.scoreValue);
+        this.stats.enemiesDefeated++;
         
         if (this.stats.wave === 1 || this.stats.wave === 2) {
             this.objectiveProgress++;

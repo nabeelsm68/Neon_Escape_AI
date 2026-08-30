@@ -17,11 +17,13 @@
             <!-- Main Menu -->
             <div id="menu-screen" class="screen active">
                 <h1 class="title glow-text">NEON ESCAPE</h1>
-                <h2 class="subtitle">SURVIVE THE DIGITAL VOID</h2>
+                <h2 class="subtitle">AI COMMAND</h2>
+                <h3 class="subtitle" style="font-size: 1.2em; color: #00f3ff; margin-bottom: 30px;">CONTROL THE FUTURE WITH YOUR HANDS</h3>
                 
                 <div class="menu-buttons">
-                    <button id="btn-play" class="neon-btn">PLAY</button>
+                    <button id="btn-play" class="neon-btn">START AI EXPERIENCE</button>
                     <button id="btn-how-to-play" class="neon-btn">HOW TO PLAY</button>
+                    <button id="btn-how-ai-works" class="neon-btn">HOW AI WORKS</button>
                     <button id="btn-credits" class="neon-btn">CREDITS</button>
                 </div>
             </div>
@@ -48,6 +50,35 @@
                     <p>Built with HTML5, CSS3, and Vanilla JavaScript.</p>
                 </div>
                 <button id="btn-back-menu-credits" class="neon-btn">BACK</button>
+            </div>
+
+            <!-- How AI Works -->
+            <div id="how-ai-works-screen" class="screen hidden">
+                <h1 class="title glow-text" style="font-size: 2.5em;">HOW AI WORKS</h1>
+                <div class="ai-info-container" style="text-align: center; max-width: 800px; margin: 0 auto; color: white;">
+                    <div class="ai-flow" style="margin-bottom: 30px; background: rgba(0,243,255,0.1); padding: 20px; border: 1px solid #00f3ff; border-radius: 5px;">
+                        <h3 style="color: #00f3ff; margin-bottom: 10px;">COMPUTER VISION (YOUR CONTROLS)</h3>
+                        <p style="font-size: 1.2em; letter-spacing: 2px;">HAND &rarr; WEBCAM &rarr; NEURAL NETWORK &rarr; GESTURE &rarr; GAME ACTION</p>
+                    </div>
+                    <div class="ai-flow" style="margin-bottom: 30px; background: rgba(157,0,255,0.1); padding: 20px; border: 1px solid #9d00ff; border-radius: 5px;">
+                        <h3 style="color: #9d00ff; margin-bottom: 10px;">BEHAVIORAL AI (ENEMIES)</h3>
+                        <p style="font-size: 1.2em; letter-spacing: 2px;">PLAYER DATA &rarr; PATHFINDING (A*) &rarr; THREAT DECISION &rarr; CHASE/INTERCEPT/GUARD</p>
+                    </div>
+                </div>
+                <button id="btn-back-menu-ai" class="neon-btn">BACK</button>
+            </div>
+
+            <!-- Calibration -->
+            <div id="calibration-screen" class="screen hidden">
+                <h1 class="title glow-text">AI VISION INITIALIZATION</h1>
+                <button id="btn-enable-camera" class="neon-btn" style="margin: 20px 0;">ENABLE AI CAMERA</button>
+                <div id="calibration-steps" class="hidden" style="margin: 30px 0; font-size: 1.5em; text-align: left; display: inline-block;">
+                    <p id="calib-step-1" class="calib-step" style="margin: 10px 0;">STEP 1: Show OPEN PALM <span class="status" style="color: #ff3333;">WAITING...</span></p>
+                    <p id="calib-step-2" class="calib-step" style="margin: 10px 0; opacity: 0.5;">STEP 2: Show POINT <span class="status" style="color: #ff3333;">WAITING...</span></p>
+                    <p id="calib-step-3" class="calib-step" style="margin: 10px 0; opacity: 0.5;">STEP 3: Show FIST <span class="status" style="color: #ff3333;">WAITING...</span></p>
+                </div>
+                <h2 id="calib-complete-msg" class="success-text hidden" style="margin-bottom: 20px;">AI VISION ONLINE</h2>
+                <button id="btn-start-sim" class="neon-btn hidden">START SIMULATION</button>
             </div>
 
             <!-- HUD (Heads Up Display) -->
@@ -85,6 +116,27 @@
                     <div class="hud-header">EMP CORE</div>
                     <div id="emp-cooldown" class="hud-cooldown ready">CHARGING</div>
                 </div>
+
+                <!-- AI HUD Panels -->
+                <div class="hud-panel ai-vision-panel" style="position: absolute; top: 160px; left: 20px; border-color: #9d00ff;">
+                    <div class="hud-header" style="color: #9d00ff;">◈ AI VISION</div>
+                    <div class="hud-small">CAMERA: <span id="camera-status" style="color: #ff3333;">OFFLINE</span></div>
+                    <div class="hud-small">GESTURE: <span id="gesture-display">NONE</span></div>
+                    <div class="hud-small">CONFIDENCE: <span id="confidence-display">0%</span></div>
+                </div>
+
+                <div class="hud-panel ai-threat-panel" style="position: absolute; top: 160px; right: 20px; border-color: #ff3333; text-align: right;">
+                    <div class="hud-header" style="color: #ff3333;">◈ THREAT ANALYSIS</div>
+                    <div class="hud-small">TARGET: PLAYER</div>
+                    <div class="hud-small">BEHAVIOR: <span id="ai-behavior-display" style="color: #ff3333;">CALCULATING</span></div>
+                </div>
+
+                <!-- NOVA AI Assistant -->
+                <div id="nova-ai-container" style="position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none;">
+                    <div id="nova-ai-message" class="hidden" style="background: rgba(0,243,255,0.2); border: 1px solid #00f3ff; padding: 10px 20px; border-radius: 20px; color: white; font-family: 'Courier New', Courier, monospace; text-shadow: 0 0 5px #00f3ff; transition: opacity 0.3s ease;">
+                        NOVA: SYSTEM ONLINE
+                    </div>
+                </div>
                 
                 <!-- Center announcements -->
                 <div id="announcement-display" class="announcement hidden">WAVE 01</div>
@@ -120,18 +172,19 @@
             
             <!-- Victory -->
             <div id="victory-screen" class="screen hidden">
-                <h1 class="title glow-text success-text">SYSTEM BREACHED</h1>
+                <h1 class="title glow-text success-text">AI SIMULATION COMPLETE</h1>
                 
                 <div class="stats-grid">
-                    <div>FINAL SCORE</div><div id="vic-score">0</div>
-                    <div>RANK</div><div id="vic-rank" style="color: #00f3ff; font-weight: bold; font-size: 1.5em;">S</div>
+                    <div>GESTURES RECOGNIZED</div><div id="vic-gestures" style="color: #00f3ff;">0</div>
+                    <div>ENEMIES DEFEATED</div><div id="vic-kills">0</div>
+                    <div>BEST COMBO</div><div id="vic-combo">x1</div>
                     <div>SURVIVAL TIME</div><div id="vic-time">00:00</div>
-                    <div>WAVE</div><div id="vic-wave">1</div>
-                    <div>BOSS DEFEATED</div><div>VOID SENTINEL</div>
+                    <div>AI ACTIONS TRIGGERED</div><div id="vic-actions" style="color: #9d00ff;">0</div>
                 </div>
 
                 <div class="menu-buttons">
                     <button id="btn-play-again" class="neon-btn">PLAY AGAIN</button>
+                    <button id="btn-vic-how-ai-works" class="neon-btn">HOW AI WORKS</button>
                     <button id="btn-menu-vic" class="neon-btn">MAIN MENU</button>
                 </div>
             </div>
@@ -141,6 +194,8 @@
     <!-- Scripts (Ordered by dependency) -->
     <script src="js/utils.js"></script>
     <script src="js/input.js"></script>
+    <!-- MediaPipe Vision will be loaded dynamically -->
+    <script src="js/ai_vision.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/environment.js"></script>

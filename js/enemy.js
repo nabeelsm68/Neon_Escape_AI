@@ -22,15 +22,17 @@ class Enemy {
 
     navigateTowards(dt, targetX, targetY) {
         this.pathTimer -= dt;
+        
+        const hasLineOfSight = Collision.checkLineOfSight(this.x, this.y, targetX, targetY, Environment.walls);
         const distToTarget = Utils.distance(this.x, this.y, targetX, targetY);
 
-        if (distToTarget < 250 || this.pathTimer <= 0) {
-            if (distToTarget >= 250 && typeof Pathfinder !== 'undefined') {
+        if (!hasLineOfSight || (distToTarget >= 250 && this.pathTimer <= 0)) {
+            if (this.pathTimer <= 0 && typeof Pathfinder !== 'undefined') {
                 this.path = Pathfinder.findPath(this.x, this.y, targetX, targetY);
                 this.pathTimer = 0.5 + Math.random() * 0.2; 
-            } else {
-                this.path = null;
             }
+        } else if (hasLineOfSight && distToTarget < 250) {
+            this.path = null;
         }
 
         let nextX = targetX;
@@ -69,6 +71,16 @@ class Enemy {
         this.y += this.vy * dt;
         
         Collision.keepInBounds(this, Game.worldWidth, Game.worldHeight);
+    }
+    
+    updateThreatHUD(behavior) {
+        if (this.behaviorState !== behavior) {
+            this.behaviorState = behavior;
+            if (UI.elements.aiBehaviorDisplay) {
+                UI.elements.aiBehaviorDisplay.textContent = behavior;
+                UI.elements.aiBehaviorDisplay.style.color = '#ff3333';
+            }
+        }
     }
 
     takeDamage(amount, isCrit = false) {
@@ -190,6 +202,7 @@ class Chaser extends Enemy {
 
     update(dt, player) {
         this.navigateTowards(dt, player.x, player.y);
+        this.updateThreatHUD('PURSUIT');
         super.update(dt, player);
     }
 
@@ -209,15 +222,18 @@ class Hunter extends Enemy {
         const dist = Utils.distance(this.x, this.y, player.x, player.y);
         if (dist > 350) {
             this.navigateTowards(dt, player.x, player.y);
+            this.updateThreatHUD('PURSUIT');
         } else if (dist < 200) {
             const angle = Utils.angle(this.x, this.y, player.x, player.y);
             this.vx = -Math.cos(angle) * this.speed * 0.5;
             this.vy = -Math.sin(angle) * this.speed * 0.5;
             this.rotation = angle;
+            this.updateThreatHUD('EVADE');
         } else {
             this.vx *= 0.9;
             this.vy *= 0.9;
             this.rotation = Utils.angle(this.x, this.y, player.x, player.y);
+            this.updateThreatHUD('INTERCEPT');
         }
 
         if (!this.isSpawning) {
@@ -263,6 +279,7 @@ class Tank extends Enemy {
     update(dt, player) {
         this.navigateTowards(dt, player.x, player.y);
         this.pulse += dt * 3;
+        this.updateThreatHUD('GUARD');
         super.update(dt, player);
     }
 

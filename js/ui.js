@@ -12,6 +12,8 @@ const UI = {
         this.screens.pause = document.getElementById('pause-screen');
         this.screens.gameOver = document.getElementById('game-over-screen');
         this.screens.victory = document.getElementById('victory-screen');
+        this.screens.howAiWorks = document.getElementById('how-ai-works-screen');
+        this.screens.calibration = document.getElementById('calibration-screen');
 
         // Cache HUD elements
         this.elements.healthFill = document.getElementById('health-bar-fill');
@@ -24,18 +26,26 @@ const UI = {
         this.elements.emp = document.getElementById('emp-cooldown');
         this.elements.announcement = document.getElementById('announcement-display');
         this.elements.objective = document.getElementById('objective-display');
+        
+        // AI Vision Elements
+        this.elements.cameraStatus = document.getElementById('camera-status');
+        this.elements.gestureDisplay = document.getElementById('gesture-display');
+        this.elements.confidenceDisplay = document.getElementById('confidence-display');
+        this.elements.aiBehaviorDisplay = document.getElementById('ai-behavior-display');
+        this.elements.novaMessage = document.getElementById('nova-ai-message');
 
         // Cache Game Over / Victory elements
         this.elements.goScore = document.getElementById('go-score');
         this.elements.goWave = document.getElementById('go-wave');
         this.elements.goTime = document.getElementById('go-time');
         this.elements.goCombo = document.getElementById('go-combo');
-
-        this.elements.vicScore = document.getElementById('vic-score');
-        this.elements.vicTime = document.getElementById('vic-time');
-        this.elements.vicWave = document.getElementById('vic-wave');
         this.elements.goRank = document.getElementById('go-rank');
-        this.elements.vicRank = document.getElementById('vic-rank');
+
+        this.elements.vicGestures = document.getElementById('vic-gestures');
+        this.elements.vicKills = document.getElementById('vic-kills');
+        this.elements.vicCombo = document.getElementById('vic-combo');
+        this.elements.vicTime = document.getElementById('vic-time');
+        this.elements.vicActions = document.getElementById('vic-actions');
 
         this.setupButtons();
     },
@@ -54,13 +64,30 @@ const UI = {
         };
 
         // Main Menu
-        bindBtn('btn-play', () => Game.startGame());
+        bindBtn('btn-play', () => {
+            // Check if AIVision exists and is ready
+            if (typeof AIVision !== 'undefined') {
+                AIVision.prepareCalibration();
+            } else {
+                Game.startGame();
+            }
+        });
         bindBtn('btn-how-to-play', () => this.showScreen('howToPlay'));
+        bindBtn('btn-how-ai-works', () => this.showScreen('howAiWorks'));
         bindBtn('btn-credits', () => this.showScreen('credits'));
         
         // Back buttons
         bindBtn('btn-back-menu', () => this.showScreen('menu'));
         bindBtn('btn-back-menu-credits', () => this.showScreen('menu'));
+        bindBtn('btn-back-menu-ai', () => this.showScreen('menu'));
+        
+        // Calibration
+        bindBtn('btn-enable-camera', () => {
+            if (typeof AIVision !== 'undefined') {
+                AIVision.startCalibration();
+            }
+        });
+        bindBtn('btn-start-sim', () => Game.startGame());
         
         // Pause Menu
         bindBtn('btn-resume', () => Game.togglePause());
@@ -72,7 +99,14 @@ const UI = {
         bindBtn('btn-menu-go', () => Game.returnToMenu());
         
         // Victory
-        bindBtn('btn-play-again', () => Game.startGame());
+        bindBtn('btn-play-again', () => {
+            if (typeof AIVision !== 'undefined') {
+                AIVision.prepareCalibration();
+            } else {
+                Game.startGame();
+            }
+        });
+        bindBtn('btn-vic-how-ai-works', () => this.showScreen('howAiWorks'));
         bindBtn('btn-menu-vic', () => Game.returnToMenu());
     },
 
@@ -158,6 +192,19 @@ const UI = {
         }, duration);
     },
 
+    showNovaMessage(text, duration = 3000) {
+        if (!this.elements.novaMessage) return;
+        this.elements.novaMessage.textContent = `NOVA: ${text}`;
+        this.elements.novaMessage.classList.remove('hidden');
+        
+        // Clear previous timeout if exists
+        if (this.novaTimeout) clearTimeout(this.novaTimeout);
+        
+        this.novaTimeout = setTimeout(() => {
+            this.elements.novaMessage.classList.add('hidden');
+        }, duration);
+    },
+
     calculateRank(score) {
         if (score >= 12000) return 'S';
         if (score >= 8000) return 'A';
@@ -174,9 +221,10 @@ const UI = {
     },
 
     updateVictory(stats) {
-        this.elements.vicScore.textContent = stats.score;
+        this.elements.vicGestures.textContent = stats.gesturesRecognized || 0;
+        this.elements.vicKills.textContent = stats.enemiesDefeated || 0;
+        this.elements.vicCombo.textContent = `x${stats.maxCombo}`;
         this.elements.vicTime.textContent = Utils.formatTime(stats.survivalTime);
-        this.elements.vicWave.textContent = stats.wave;
-        this.elements.vicRank.textContent = this.calculateRank(stats.score);
+        this.elements.vicActions.textContent = stats.aiActionsTriggered || 0;
     }
 };

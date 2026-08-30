@@ -28,6 +28,44 @@ const Collision = {
         return distance <= circle.radius;
     },
     
+    // Line-Line Intersection
+    lineLine(x1, y1, x2, y2, x3, y3, x4, y4) {
+        const den = ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1));
+        if (den === 0) return false;
+        
+        const uA = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / den;
+        const uB = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / den;
+        
+        return (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1);
+    },
+
+    // Line-Rectangle Intersection
+    lineRect(x1, y1, x2, y2, rx, ry, rw, rh) {
+        const left = this.lineLine(x1, y1, x2, y2, rx, ry, rx, ry + rh);
+        const right = this.lineLine(x1, y1, x2, y2, rx + rw, ry, rx + rw, ry + rh);
+        const top = this.lineLine(x1, y1, x2, y2, rx, ry, rx + rw, ry);
+        const bottom = this.lineLine(x1, y1, x2, y2, rx, ry + rh, rx + rw, ry + rh);
+        
+        if ((x1 > rx && x1 < rx + rw && y1 > ry && y1 < ry + rh) ||
+            (x2 > rx && x2 < rx + rw && y2 > ry && y2 < ry + rh)) {
+            return true;
+        }
+
+        return left || right || top || bottom;
+    },
+    
+    // Check if path is clear
+    checkLineOfSight(x1, y1, x2, y2, walls) {
+        if (!walls) return true;
+        for (let i = 0; i < walls.length; i++) {
+            const w = walls[i];
+            if (this.lineRect(x1, y1, x2, y2, w.x, w.y, w.w, w.h)) {
+                return false;
+            }
+        }
+        return true;
+    },
+    
     // Resolve collision between circle and walls by pushing circle out
     resolveWallCollision(entity, walls) {
         for (let i = 0; i < walls.length; i++) {

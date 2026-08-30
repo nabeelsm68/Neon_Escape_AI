@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON ESCAPE: Survive the Digital Void</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- The Game Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- UI Overlays Layer -->
+        <div id="ui-layer">
+            
+            <!-- Main Menu -->
+            <div id="menu-screen" class="screen active">
+                <h1 class="title glow-text">NEON ESCAPE</h1>
+                <h2 class="subtitle">SURVIVE THE DIGITAL VOID</h2>
+                
+                <div class="menu-buttons">
+                    <button id="btn-play" class="neon-btn">PLAY</button>
+                    <button id="btn-how-to-play" class="neon-btn">HOW TO PLAY</button>
+                    <button id="btn-credits" class="neon-btn">CREDITS</button>
+                </div>
+            </div>
+
+            <!-- How To Play -->
+            <div id="how-to-play-screen" class="screen hidden">
+                <h1 class="title glow-text">HOW TO PLAY</h1>
+                <div class="controls-info">
+                    <p><span class="key">W A S D</span> Move</p>
+                    <p><span class="key">MOUSE</span> Aim</p>
+                    <p><span class="key">LEFT CLICK</span> Shoot</p>
+                    <p><span class="key">SPACE</span> Dash</p>
+                    <p><span class="key">E</span> EMP Ability</p>
+                    <p><span class="key">ESC</span> Pause</p>
+                </div>
+                <button id="btn-back-menu" class="neon-btn">BACK</button>
+            </div>
+
+            <!-- Credits -->
+            <div id="credits-screen" class="screen hidden">
+                <h1 class="title glow-text">CREDITS</h1>
+                <div class="credits-info">
+                    <p>An original student project.</p>
+                    <p>Built with HTML5, CSS3, and Vanilla JavaScript.</p>
+                </div>
+                <button id="btn-back-menu-credits" class="neon-btn">BACK</button>
+            </div>
+
+            <!-- HUD (Heads Up Display) -->
+            <div id="hud-screen" class="screen hidden">
+                <div class="hud-panel top-left">
+                    <div class="hud-header">◈ SYSTEM STATUS</div>
+                    <div class="hud-bar-row">
+                        <span class="hud-label-small">HP</span>
+                        <div class="health-bar-container"><div id="health-bar-fill" class="health-bar-fill"></div></div>
+                    </div>
+                    <div class="hud-bar-row">
+                        <span class="hud-label-small">NRG</span>
+                        <div class="energy-bar-container"><div id="energy-bar-fill" class="energy-bar-fill"></div></div>
+                    </div>
+                </div>
+                
+                <div class="hud-panel top-center">
+                    <div id="wave-display" class="hud-large">WAVE 01</div>
+                    <div id="objective-display" class="hud-small" style="color: #00f3ff; margin-bottom: 10px; font-weight: bold;"></div>
+                    <div id="score-display" class="hud-medium">0</div>
+                    <div id="combo-display" class="hud-combo hidden">COMBO x2</div>
+                </div>
+                
+                <div class="hud-panel top-right">
+                    <div class="hud-header">SURVIVAL TIME</div>
+                    <div id="time-display" class="hud-medium">00:00</div>
+                </div>
+
+                <div class="hud-panel bottom-left">
+                    <div class="hud-header">MOBILITY DASH</div>
+                    <div id="dash-cooldown" class="hud-cooldown ready">READY</div>
+                </div>
+
+                <div class="hud-panel bottom-right">
+                    <div class="hud-header">EMP CORE</div>
+                    <div id="emp-cooldown" class="hud-cooldown ready">CHARGING</div>
+                </div>
+                
+                <!-- Center announcements -->
+                <div id="announcement-display" class="announcement hidden">WAVE 01</div>
+            </div>
+
+            <!-- Pause Menu -->
+            <div id="pause-screen" class="screen hidden">
+                <h1 class="title glow-text">PAUSED</h1>
+                <div class="menu-buttons">
+                    <button id="btn-resume" class="neon-btn">RESUME</button>
+                    <button id="btn-restart-pause" class="neon-btn">RESTART</button>
+                    <button id="btn-menu-pause" class="neon-btn">MAIN MENU</button>
+                </div>
+            </div>
+
+            <!-- Game Over -->
+            <div id="game-over-screen" class="screen hidden">
+                <h1 class="title glow-text error-text">SYSTEM FAILURE</h1>
+                
+                <div class="stats-grid">
+                    <div>FINAL SCORE</div><div id="go-score">0</div>
+                    <div>RANK</div><div id="go-rank" style="color: #00f3ff;">C</div>
+                    <div>WAVE REACHED</div><div id="go-wave">1</div>
+                    <div>SURVIVAL TIME</div><div id="go-time">00:00</div>
+                    <div>BEST COMBO</div><div id="go-combo">x1</div>
+                </div>
+
+                <div class="menu-buttons">
+                    <button id="btn-retry" class="neon-btn">RETRY</button>
+                    <button id="btn-menu-go" class="neon-btn">MAIN MENU</button>
+                </div>
+            </div>
+            
+            <!-- Victory -->
+            <div id="victory-screen" class="screen hidden">
+                <h1 class="title glow-text success-text">SYSTEM BREACHED</h1>
+                
+                <div class="stats-grid">
+                    <div>FINAL SCORE</div><div id="vic-score">0</div>
+                    <div>RANK</div><div id="vic-rank" style="color: #00f3ff; font-weight: bold; font-size: 1.5em;">S</div>
+                    <div>SURVIVAL TIME</div><div id="vic-time">00:00</div>
+                    <div>WAVE</div><div id="vic-wave">1</div>
+                    <div>BOSS DEFEATED</div><div>VOID SENTINEL</div>
+                </div>
+
+                <div class="menu-buttons">
+                    <button id="btn-play-again" class="neon-btn">PLAY AGAIN</button>
+                    <button id="btn-menu-vic" class="neon-btn">MAIN MENU</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts (Ordered by dependency) -->
+    <script src="js/utils.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/environment.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/collision.js"></script>
+    <script src="js/bullet.js"></script>
+    <script src="js/powerups.js"></script>
+    <script src="js/enemy.js"></script>
+    <script src="js/boss.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

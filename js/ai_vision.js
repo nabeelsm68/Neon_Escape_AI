@@ -14,16 +14,20 @@ const AIVision = {
     smoothedDy: 0,
     lastValidAimTime: 0,
     
+    stream: null,
+    
     // Fallback variables
     cameraFailed: false,
 
     async init() {
-        // Create hidden video element
-        this.video = document.createElement('video');
-        this.video.style.display = 'none';
-        this.video.autoplay = true;
-        this.video.playsInline = true;
-        document.body.appendChild(this.video);
+        if (!this.video) {
+            this.video = document.createElement('video');
+            this.video.style.display = 'none';
+            this.video.autoplay = true;
+            this.video.playsInline = true;
+            this.video.muted = true;
+            document.body.appendChild(this.video);
+        }
 
         try {
             const { GestureRecognizer, FilesetResolver } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs");
@@ -40,49 +44,71 @@ const AIVision = {
                 numHands: 1
             });
             this.isInitialized = true;
+            console.log("[AI VISION] MediaPipe initialized");
         } catch(e) {
-            console.error("AI Vision Model Load Failed:", e);
-            this.handleCameraFailure(e);
+            console.error("[AI VISION] MediaPipe Load Failed:", e);
+            throw e;
         }
     },
 
     async startCamera() {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            console.error("getUserMedia is not supported in this browser. Ensure you are running on localhost or HTTPS.");
-            this.handleCameraFailure(new Error("getUserMedia not supported (requires localhost/HTTPS)"));
-            return false;
-        }
-        
-        if (UI.elements.cameraStatus) {
-            UI.elements.cameraStatus.textContent = "INITIALIZING...";
-            UI.elements.cameraStatus.style.color = "#f39c12";
+            console.error("[AI VISION] getUserMedia is not supported in this browser.");
+            throw new Error("getUserMedia not supported (requires localhost/HTTPS)");
         }
         
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "user",
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                },
+                audio: false
+            });
+            
+            console.log("[AI VISION] getUserMedia success");
+            this.stream = stream;
+            
+            if (!this.video) {
+                this.video = document.createElement('video');
+                this.video.style.display = 'none';
+                this.video.autoplay = true;
+                this.video.playsInline = true;
+                this.video.muted = true;
+                document.body.appendChild(this.video);
+            }
+            
             this.video.srcObject = stream;
             
-            // Wait for video to actually be ready
-            return new Promise((resolve) => {
-                this.video.addEventListener('loadeddata', () => {
-                    this.isActive = true;
-                    if (UI.elements.cameraStatus) {
-                        UI.elements.cameraStatus.textContent = "ONLINE";
-                        UI.elements.cameraStatus.style.color = "#00f3ff";
+            return new Promise((resolve, reject) => {
+                this.video.addEventListener('loadedmetadata', async () => {
+                    console.log("[AI VISION] video metadata ready");
+                    try {
+                        await this.video.play();
+                        console.log("[AI VISION] video playing");
+                        
+                        const checkFrames = () => {
+                            if (this.video.readyState >= 2 && this.video.videoWidth > 0 && this.video.videoHeight > 0) {
+                                console.log("[AI VISION] video dimensions: " + this.video.videoWidth + "x" + this.video.videoHeight);
+                                resolve(true);
+                            } else {
+                                requestAnimationFrame(checkFrames);
+                            }
+                        };
+                        checkFrames();
+                    } catch(e) {
+                        console.error("[AI VISION] video playback failure:", e);
+                        reject(e);
                     }
-                    this.predictLoop();
-                    resolve(true);
+                }, { once: true });
+                
+                this.video.addEventListener('error', (e) => {
+                    reject(new Error("Video playback error"));
                 });
             });
         } catch(e) {
-            console.error("Camera Access Failed. Error details:", e.name, e.message);
-            if (e.name === 'NotAllowedError') console.error("Permission denied by user.");
-            else if (e.name === 'NotFoundError') console.error("No camera found on device.");
-            else if (e.name === 'NotReadableError') console.error("Camera is already in use by another application.");
-            else console.error(e);
-            
-            this.handleCameraFailure(e);
-            return false;
+            throw e;
         }
     },
 
@@ -110,39 +136,54 @@ const AIVision = {
     async startCalibration() {
         document.getElementById('btn-enable-camera').classList.add('hidden');
         document.getElementById('calibration-steps').classList.remove('hidden');
-        document.getElementById('calib-step-1').innerHTML = "LOADING AI MODEL... <span class='status' style='color:#f39c12;'>PLEASE WAIT</span>";
+        document.getElementById('calib-step-1').innerHTML = "REQUESTING CAMERA... <span class='status' style='color:#f39c12;'>PLEASE WAIT</span>";
         
-        if (!this.isInitialized) {
-            await this.init();
+        if (UI.elements.cameraStatus) {
+            UI.elements.cameraStatus.textContent = "INITIALIZING...";
+            UI.elements.cameraStatus.style.color = "#f39c12";
         }
         
-        document.getElementById('calib-step-1').innerHTML = 'STEP 1: Show OPEN PALM <span class="status" style="color: #ff3333;">WAITING...</span>';
-        
-        if (!this.cameraFailed && !this.isActive) {
-            const success = await this.startCamera();
-            if (!success) {
-                // Wait briefly so they see the error in the HUD, then start
-                setTimeout(() => Game.startGame(), 2000);
-                return;
+        try {
+            if (!this.isActive) {
+                await this.startCamera();
+                this.isActive = true;
             }
-        } else if (this.cameraFailed) {
+            
+            document.getElementById('calib-step-1').innerHTML = "LOADING AI MODEL... <span class='status' style='color:#f39c12;'>PLEASE WAIT</span>";
+            
+            if (!this.isInitialized) {
+                await this.init();
+            }
+            
+            if (UI.elements.cameraStatus) {
+                UI.elements.cameraStatus.textContent = "ONLINE";
+                UI.elements.cameraStatus.style.color = "#00f3ff";
+            }
+            
+            console.log("[AI VISION] CAMERA ONLINE");
+            this.predictLoop();
+            
+            document.getElementById('calib-step-1').innerHTML = 'STEP 1: Show OPEN PALM <span class="status" style="color: #ff3333;">WAITING...</span>';
+            
+            this.isCalibrating = true;
+            this.calibrationStep = 1;
+            this.updateCalibrationUI();
+            
+            // Reset status text
+            document.querySelector('#calib-step-1 .status').textContent = 'WAITING...';
+            document.querySelector('#calib-step-1 .status').style.color = '#ff3333';
+            document.querySelector('#calib-step-2 .status').textContent = 'WAITING...';
+            document.querySelector('#calib-step-2 .status').style.color = '#ff3333';
+            document.querySelector('#calib-step-3 .status').textContent = 'WAITING...';
+            document.querySelector('#calib-step-3 .status').style.color = '#ff3333';
+            document.getElementById('calib-complete-msg').classList.add('hidden');
+            document.getElementById('btn-start-sim').classList.add('hidden');
+            
+        } catch (e) {
+            console.error("[AI VISION] Camera/MediaPipe Access Failed:", e);
+            this.handleCameraFailure(e);
             setTimeout(() => Game.startGame(), 2000);
-            return;
         }
-
-        this.isCalibrating = true;
-        this.calibrationStep = 1;
-        this.updateCalibrationUI();
-        
-        // Reset status text
-        document.querySelector('#calib-step-1 .status').textContent = 'WAITING...';
-        document.querySelector('#calib-step-1 .status').style.color = '#ff3333';
-        document.querySelector('#calib-step-2 .status').textContent = 'WAITING...';
-        document.querySelector('#calib-step-2 .status').style.color = '#ff3333';
-        document.querySelector('#calib-step-3 .status').textContent = 'WAITING...';
-        document.querySelector('#calib-step-3 .status').style.color = '#ff3333';
-        document.getElementById('calib-complete-msg').classList.add('hidden');
-        document.getElementById('btn-start-sim').classList.add('hidden');
     },
 
     updateCalibrationUI() {

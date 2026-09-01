@@ -196,7 +196,7 @@ class Enemy {
 
 class Chaser extends Enemy {
     constructor(x, y, waveMultiplier) {
-        super(x, y, 30 * waveMultiplier, 90 + (waveMultiplier * 5), 10, 100, '#ff3333', 12);
+        super(x, y, 30 * waveMultiplier, 60 + (waveMultiplier * 5), 10, 100, '#ff3333', 12);
         this.rotation = 0;
     }
 
@@ -213,7 +213,7 @@ class Chaser extends Enemy {
 
 class Hunter extends Enemy {
     constructor(x, y, waveMultiplier) {
-        super(x, y, 20 * waveMultiplier, 70 + (waveMultiplier * 5), 15, 200, '#9d00ff', 10);
+        super(x, y, 20 * waveMultiplier, 50 + (waveMultiplier * 5), 15, 200, '#9d00ff', 10);
         this.rotation = 0;
         this.fireTimer = Utils.random(1.0, 3.0);
     }
@@ -272,7 +272,7 @@ class Hunter extends Enemy {
 
 class Tank extends Enemy {
     constructor(x, y, waveMultiplier) {
-        super(x, y, 150 * waveMultiplier, 45 + (waveMultiplier * 5), 30, 350, '#ff00ff', 20);
+        super(x, y, 150 * waveMultiplier, 35 + (waveMultiplier * 5), 30, 350, '#ff00ff', 20);
         this.pulse = 0;
     }
 

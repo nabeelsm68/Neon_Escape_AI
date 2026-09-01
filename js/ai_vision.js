@@ -10,6 +10,10 @@ const AIVision = {
     currentGesture: 'None',
     confidence: 0,
     
+    smoothedDx: 0,
+    smoothedDy: 0,
+    lastValidAimTime: 0,
+    
     // Fallback variables
     cameraFailed: false,
 
@@ -163,24 +167,68 @@ const AIVision = {
             const results = this.gestureRecognizer.recognizeForVideo(this.video, startTimeMs);
             
             if (results.gestures.length > 0) {
-                const gestureName = results.gestures[0][0].categoryName;
-                const score = results.gestures[0][0].score;
+                let gestureName = results.gestures[0][0].categoryName;
+                let score = results.gestures[0][0].score;
+                
+                const landmarks = results.landmarks[0];
+                
+                // Fallback for 360-degree aiming: MediaPipe drops Pointing_Up if pointing downwards.
+                // We calculate rotation-invariant finger extension to override it.
+                if (gestureName === 'None' && landmarks && landmarks.length > 0) {
+                    const idxTip = landmarks[8];
+                    const idxBase = landmarks[5];
+                    const midTip = landmarks[12];
+                    const midBase = landmarks[9];
+                    const ringTip = landmarks[16];
+                    const ringBase = landmarks[13];
+                    
+                    const distSq = (p1, p2) => (p1.x - p2.x)**2 + (p1.y - p2.y)**2;
+                    const idxLenSq = distSq(idxTip, idxBase);
+                    const midLenSq = distSq(midTip, midBase);
+                    const ringLenSq = distSq(ringTip, ringBase);
+                    
+                    // If index is significantly more extended than middle & ring fingers
+                    if (idxLenSq > midLenSq * 2 && idxLenSq > ringLenSq * 2) {
+                        gestureName = 'Pointing_Up';
+                        score = 0.99; // High confidence override
+                    }
+                }
                 
                 this.currentGesture = gestureName;
                 this.confidence = Math.round(score * 100);
                 
                 // Note: The model returns 0 to 1 coordinates for landmarks.
-                // We use index finger tip (landmark 8) for aiming.
-                const landmarks = results.landmarks[0];
+                // We calculate a robust 360-degree aiming vector from the palm to the index finger tip.
                 if (landmarks && landmarks.length > 0) {
-                    const indexFinger = landmarks[8];
-                    // Map to game width/height. Flip X for mirror effect.
-                    const mappedX = (1 - indexFinger.x) * Game.width;
-                    const mappedY = indexFinger.y * Game.height;
+                    const indexTip = landmarks[8];
+                    const wrist = landmarks[0];
+                    const indexMCP = landmarks[5];
+                    const pinkyMCP = landmarks[17];
                     
-                    if (this.currentGesture !== 'None' && Game.state === Game.STATES.PLAYING) {
-                         Input.mouse.x = mappedX;
-                         Input.mouse.y = mappedY;
+                    // Approximate Palm Center
+                    const palmX = (wrist.x + indexMCP.x + pinkyMCP.x) / 3;
+                    const palmY = (wrist.y + indexMCP.y + pinkyMCP.y) / 3;
+                    
+                    // Vector from Palm to Tip
+                    // We invert dx because the webcam feed is mirrored horizontally (1 - x)
+                    let dx = -(indexTip.x - palmX);
+                    let dy = indexTip.y - palmY;
+                    
+                    const mag = Math.sqrt(dx*dx + dy*dy);
+                    if (mag > 0.02) { // Minimal deadzone to prevent jitter when finger is resting on palm
+                        dx /= mag;
+                        dy /= mag;
+                        
+                        // Apply lightweight smoothing
+                        this.smoothedDx = Utils.lerp(this.smoothedDx || dx, dx, 0.35);
+                        this.smoothedDy = Utils.lerp(this.smoothedDy || dy, dy, 0.35);
+                        
+                        // If we are playing, map this vector to the mouse coordinates
+                        if (Game.state === Game.STATES.PLAYING) {
+                            // Map relative to the center of the screen
+                            Input.mouse.x = (Game.width / 2) + this.smoothedDx * 500;
+                            Input.mouse.y = (Game.height / 2) + this.smoothedDy * 500;
+                        }
                     }
                 }
                 
@@ -234,20 +282,27 @@ const AIVision = {
         // Reset virtual keys before applying new ones to avoid sticking
         Input.keys.space = false;
         Input.keys.e = false;
-        Input.mouse.left = false;
-
-        // Throttle AI action counter so it doesn't just zoom up
+        
+        // Only reset mouse left if gesture was completely lost for a few frames
         const timeNow = performance.now();
         if (!this.lastActionTime) this.lastActionTime = 0;
         const canCountAction = (timeNow - this.lastActionTime > 500);
 
         if (gesture === 'Pointing_Up') {
             Input.mouse.left = true;
+            this.lastValidAimTime = timeNow;
             if (canCountAction && Game.stats) {
                 Game.stats.aiActionsTriggered++;
                 this.lastActionTime = timeNow;
             }
-        } else if (gesture === 'Closed_Fist') {
+        } else {
+            // Retain firing state briefly if gesture drops temporarily
+            if (timeNow - this.lastValidAimTime > 250) {
+                Input.mouse.left = false;
+            }
+        }
+        
+        if (gesture === 'Closed_Fist') {
             Input.keys.e = true;
             if (canCountAction && Game.stats) {
                 Game.stats.aiActionsTriggered++;

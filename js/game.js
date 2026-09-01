@@ -163,20 +163,20 @@ const Game = {
         this.spawnTimer = 2.0; 
         
         if (waveNum === 1) {
-            this.objective = "ELIMINATE 8 HOSTILES";
-            this.objectiveTarget = 8;
+            this.objective = "ELIMINATE 5 HOSTILES";
+            this.objectiveTarget = 5;
             this.objectiveProgress = 0;
             UI.showAnnouncement("LEVEL 1 - AI VISION<br>ELIMINATE HOSTILES");
             if(UI.showNovaMessage) UI.showNovaMessage("CALIBRATION COMPLETE. COMMENCING COMBAT PROTOCOL.", 4000);
         } else if (waveNum === 2) {
             this.objective = "SURVIVE THE HUNTER ASSAULT";
-            this.objectiveTarget = 15;
+            this.objectiveTarget = 6;
             this.objectiveProgress = 0;
             UI.showAnnouncement("LEVEL 2 - AI COMBAT<br>WARNING: HUNTERS DETECTED");
             if(UI.showNovaMessage) UI.showNovaMessage("MULTIPLE HOSTILES DETECTED. RECOMMEND EVASIVE ACTION.", 4000);
         } else if (waveNum === 3) {
-            this.objective = "DESTROY 3 ARMORED UNITS";
-            this.objectiveTarget = 3;
+            this.objective = "DESTROY 7 ARMORED UNITS";
+            this.objectiveTarget = 7;
             this.objectiveProgress = 0;
             UI.showAnnouncement("LEVEL 3 - AI ADAPTATION<br>ARMORED UNITS DEPLOYED");
             if(UI.showNovaMessage) UI.showNovaMessage("ENEMIES ARE ADAPTING TO YOUR MOVEMENT. USE GESTURES CAREFULLY.", 4000);
@@ -233,7 +233,7 @@ const Game = {
 
     spawnEnemy() {
         if (this.objectiveProgress >= this.objectiveTarget) return; // Stop spawning when objective met
-        const maxConcurrent = 8 + (this.stats.wave * 2);
+        const maxConcurrent = Math.min(3 + (this.stats.wave - 1), 5);
         if (this.enemies.length >= maxConcurrent) return;
         
         let x, y;
